@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentPlayer = 'white'; // Track whose turn it is
     let enPassantTarget = null;  // Track the position of the pawn that can be captured via en passant
     let highlightedPiece = null;  // Track the currently highlighted piece
+    let fullMoveDone = false;  // Track if a full move has been made
 
 
     let board = [
@@ -221,6 +222,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 if (targetRow === enPassantTarget.row && targetCol === enPassantTarget.col) {
                                     // Remove the captured pawn (en passant capture)
                                     board[enPassantTarget.row + (draggedPiece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
+                                   
                                 }
                             }
 
@@ -230,9 +232,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             // Switch player turn
                             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-                            
+
+                            if (fullMoveDone) {
+                                enPassantTarget = null;  // Clear enPassantTarget after a full move
+                                fullMoveDone = false;
+                            }
+
                             // Clear enPassantTarget after a move
-                            enPassantTarget = null;
+                            if (enPassantTarget != null) {
+                                fullMoveDone = true;
+                            }
                             
                             renderBoard();
                         }
