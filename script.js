@@ -4,6 +4,9 @@ document.addEventListener("DOMContentLoaded", function () {
     let draggedPiece = null;
     let draggedFrom = null;
     let currentPlayer = 'white'; // Track whose turn it is
+    let enPassantTarget = null;  // Track the position of the pawn that can be captured via en passant
+    let highlightedPiece = null;  // Track the currently highlighted piece
+
 
     let board = [
         ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
@@ -15,6 +18,13 @@ document.addEventListener("DOMContentLoaded", function () {
         ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
         ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
     ];
+
+    let history = [];  // To store the history of the board states
+
+    // Helper function to make a deep copy of the board
+    function cloneBoard(board) {
+        return board.map(row => [...row]);  // Copy each row
+    }
 
     
     newGameBtn.addEventListener('click', () => {
@@ -31,6 +41,14 @@ document.addEventListener("DOMContentLoaded", function () {
         currentPlayer = 'white';
         renderBoard();
         console.log('New game started');
+    });
+
+    undoBtn.addEventListener('click', () => {
+        if (history.length > 0) {
+            board = history.pop();  // Restore the previous board state
+            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';  // Switch player turn
+            renderBoard();
+        }
     });
 
     const pieceImages = {
@@ -76,6 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (fromRow - toRow === direction) return true;
             // Move forward two squares (only from starting position)
             if (fromRow === startRow && (fromRow - toRow) === (2 * direction) ) {
+                enPassantTarget = { row: toRow + direction, col: toCol};  // Set the en passant target square
                 return true;
             }
         }
@@ -83,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Capture move (diagonal)
         if ((Math.abs(fromCol - toCol) === 1 ) && (fromRow - toRow === direction)) {
             // Check if the target square has an opponent piece
-            return isOpponentPiece(piece, toRow, toCol);
+            return isOpponentPiece(piece, toRow, toCol) || enPassantTarget && enPassantTarget.row === toRow && enPassantTarget.col === toCol;
         }
         
         return false; // Invalid move
@@ -138,7 +157,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    let highlightedPiece = null; // To track the currently highlighted piece
 
     // Render the board
     function renderBoard() {
@@ -196,13 +214,26 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (isValidMove(draggedPiece, fromRow, fromCol, targetRow, targetCol) &&
                             (board[targetRow][targetCol] === '' || isOpponentPiece(draggedPiece, targetRow, targetCol))) {
 
+                            // Save the current state to history before making a move
+                            history.push(cloneBoard(board));  // Save the board before the move
+                            
+                            if (draggedPiece.toLowerCase() === 'p' && enPassantTarget) {
+                                if (targetRow === enPassantTarget.row && targetCol === enPassantTarget.col) {
+                                    // Remove the captured pawn (en passant capture)
+                                    board[enPassantTarget.row + (draggedPiece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
+                                }
+                            }
+
                             // Move the piece
                             board[fromRow][fromCol] = '';
                             board[targetRow][targetCol] = draggedPiece;
 
                             // Switch player turn
                             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-
+                            
+                            // Clear enPassantTarget after a move
+                            enPassantTarget = null;
+                            
                             renderBoard();
                         }
                         draggedPiece = null;
