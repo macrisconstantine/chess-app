@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const boardElement = document.getElementById("chessboard");
+    let title = document.getElementById("title");
 
     let draggedPiece = null;
     let draggedFrom = null;
@@ -7,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let enPassantTarget = null;  // Track the position of the pawn that can be captured via en passant
     let highlightedPiece = null;  // Track the currently highlighted piece
     let fullMoveDone = false;  // Track if a full move has been made
+    let test = false;  // Set to true to test the game
 
 
     let board = [
@@ -71,9 +73,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const isBlackPiece = (piece) => /^[rnbqkp]$/.test(piece);
 
     // Move validation functions for each type of piece
-    function isValidMove(piece, fromRow, fromCol, toRow, toCol) {
-        if (currentPlayer === 'white' && !isWhitePiece(piece)) return false;
-        if (currentPlayer === 'black' && !isBlackPiece(piece)) return false;
+    function isValidMove(piece, fromRow, fromCol, toRow, toCol, test) {
+        if (fromRow === toRow && fromCol === toCol) return false;  // The piece must move to a different square
+        if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;  // Target square must be on the board
+        if (piece === '') return false;  // Must select a piece to move
+        if (board[toRow][toCol] && (isWhitePiece(piece) && isWhitePiece(board[toRow][toCol]) || isBlackPiece(piece) && isBlackPiece(board[toRow][toCol]))) return false;  // Cannot capture own piece
+        if (currentPlayer === 'white' && !isWhitePiece(piece) && !test) return false;
+        if (currentPlayer === 'black' && !isBlackPiece(piece) && !test) return false;
         switch (piece.toLowerCase()) {
             case 'p': return isValidPawnMove(piece, fromRow, fromCol, toRow, toCol);
             case 'r': return isValidRookMove(fromRow, fromCol, toRow, toCol);
@@ -85,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-        function isValidPawnMove(piece, fromRow, fromCol, toRow, toCol) {
+    function isValidPawnMove(piece, fromRow, fromCol, toRow, toCol) {
         const direction = piece === 'P' ? -1 : 1; // White moves up (-1), Black moves down (+1)
         const startRow = piece === 'P' ? 1 : 6; // Starting position for pawns
 
@@ -158,6 +164,98 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function isKingInCheck(player) {
+        const kingPosition = findKingPosition(player);
+        const opponentPlayer = player === 'white' ? 'black' : 'white';
+        const opponentIsWhite = opponentPlayer === 'white';
+    
+        // Loop through the board to check all opponent pieces and see if any can attack the king
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = board[row][col];
+                if (kingPosition === null) return false;  // King not found (this should never happen)
+                // If it's an opponent's piece, check if it can move to the king's position
+                if (piece !== '' && ((opponentIsWhite && isWhitePiece(piece)) || (!opponentIsWhite && isBlackPiece(piece)))) {
+                    if (isValidMove(piece, row, col, kingPosition.row, kingPosition.col, true) || (piece.toLowerCase() === 'p' && Math.abs(row - kingPosition.row) === 1 && Math.abs(col - kingPosition.col) === 1)) {
+                        // Return true if any opponent piece can move to the king's position
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;  // Return false if no opponent piece can attack the king
+    }
+    
+    
+    function findKingPosition(player) {
+        const kingPiece = player === 'white' ? 'K' : 'k';
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (board[row][col] === kingPiece) {
+                    return { row, col };
+                }
+            }
+        }
+        return null;  // King not found (this should never happen)
+    }
+    
+    
+    function isMoveSafe(piece, fromRow, fromCol, toRow, toCol) {
+        const originalPiece = board[toRow][toCol];  // Save the piece at the target location
+        
+        // Temporarily make the move
+        board[toRow][toCol] = piece;
+        board[fromRow][fromCol] = '';
+    
+        const isInCheck = isKingInCheck(currentPlayer);
+    
+        // Undo the move
+        board[fromRow][fromCol] = piece;
+        board[toRow][toCol] = originalPiece;
+    
+        return !isInCheck;  // Return true if the king is not in check after the move
+    }
+    
+    
+    function hasLegalMoves(player) {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = board[row][col];
+                if ((player === 'white' && isWhitePiece(piece)) || (player === 'black' && isBlackPiece(piece))) {
+                    for (let targetRow = 0; targetRow < 8; targetRow++) {
+                        for (let targetCol = 0; targetCol < 8; targetCol++) {
+                            if (isValidMove(piece, row, col, targetRow, targetCol) && isMoveSafe(piece, row, col, targetRow, targetCol)) {
+                                console.log("Legal move found for " + player + " at " + row + targetRow +", " + col + targetCol + piece);
+                                return true;  // A legal move exists
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;  // No legal moves available
+    }
+    
+    
+    function checkForCheckmateOrStalemate() {
+        console.log("Checking for checkmate or stalemate for " + currentPlayer);
+        if (!hasLegalMoves(currentPlayer)) {
+            if (isKingInCheck(currentPlayer)) {
+                title.innerHTML = currentPlayer + " is in checkmate. gg ez.";
+                console.log(currentPlayer + " is in checkmate! Game over.");
+                gameOver();
+            } else {
+                title.innerHTML = currentPlayer + " is in stalemate. gg.";
+                console.log(currentPlayer + " is in stalemate! Game over.");
+                gameOver();
+            }
+        }
+    }
+    
+    function gameOver() {
+        // Handle the end of the game (e.g., display a message, stop the game, etc.)
+        console.log("Game Over");
+    }
 
     // Render the board
     function renderBoard() {
@@ -165,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let row = 7; row >= 0; row--) {
             for (let col = 0; col < 8; col++) {
                 const square = document.createElement("div");
-                square.className = "square " + ((row + col) % 2 === 0 ? "white" : "black");
+                square.className = "square " + ((row + col) % 2 === 0 ? "black" : "white");
 
                 square.dataset.row = row;
                 square.dataset.col = col;
@@ -206,49 +304,64 @@ document.addEventListener("DOMContentLoaded", function () {
                 square.addEventListener('drop', (e) => {
                     const targetRow = parseInt(square.dataset.row);
                     const targetCol = parseInt(square.dataset.col);
-
+                
                     if (draggedPiece && draggedFrom) {
                         const fromRow = draggedFrom.row;
                         const fromCol = draggedFrom.col;
+                
+                        // Debugging statements
+        console.log("Dragged Piece: ", draggedPiece);
+        console.log("From Position: ", fromRow, fromCol);
+        console.log("Target Position: ", targetRow, targetCol);
+        console.log("Is Move Valid: ", isValidMove(draggedPiece, fromRow, fromCol, targetRow, targetCol));  
+        console.log("Is Move Safe: ", isMoveSafe(draggedPiece, fromRow, fromCol, targetRow, targetCol));
 
                         // Validate move
-                        if (isValidMove(draggedPiece, fromRow, fromCol, targetRow, targetCol) &&
-                            (board[targetRow][targetCol] === '' || isOpponentPiece(draggedPiece, targetRow, targetCol))) {
-
+                        if (isValidMove(draggedPiece, fromRow, fromCol, targetRow, targetCol) && 
+                            (board[targetRow][targetCol] === '' || isOpponentPiece(draggedPiece, targetRow, targetCol)) && 
+                            isMoveSafe(draggedPiece, fromRow, fromCol, targetRow, targetCol)) {
+                
                             // Save the current state to history before making a move
                             history.push(cloneBoard(board));  // Save the board before the move
                             
+                            // Handle en passant
                             if (draggedPiece.toLowerCase() === 'p' && enPassantTarget) {
                                 if (targetRow === enPassantTarget.row && targetCol === enPassantTarget.col) {
                                     // Remove the captured pawn (en passant capture)
                                     board[enPassantTarget.row + (draggedPiece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
-                                   
                                 }
                             }
-
+                
                             // Move the piece
                             board[fromRow][fromCol] = '';
                             board[targetRow][targetCol] = draggedPiece;
-
+                
                             // Switch player turn
                             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-
+                            console.log("Current Player: ", currentPlayer);
                             if (fullMoveDone) {
                                 enPassantTarget = null;  // Clear enPassantTarget after a full move
                                 fullMoveDone = false;
                             }
-
+                
                             // Clear enPassantTarget after a move
                             if (enPassantTarget != null) {
                                 fullMoveDone = true;
                             }
-                            
+                
                             renderBoard();
+                
+                            checkForCheckmateOrStalemate();
+                        } else {
+                            console.log("Invalid move: King would be in check or move not valid");
                         }
+                
+                        // Reset dragged piece and position
                         draggedPiece = null;
                         draggedFrom = null;
                     }
                 });
+                
 
                 boardElement.appendChild(square);
             }
