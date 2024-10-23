@@ -8,6 +8,11 @@ document.addEventListener("DOMContentLoaded", function () {
     let enPassantTarget = null;  // Track the position of the pawn that can be captured via en passant
     let highlightedPiece = null;  // Track the currently highlighted piece
     let fullMoveDone = false;  // Track if a full move has been made
+    let whiteKingMoved = false;
+    let blackKingMoved = false;
+    let whiteRookMoved = { kingside: false, queenside: false };
+    let blackRookMoved = { kingside: false, queenside: false };
+
     let test = false;  // Set to true to test the game
 
 
@@ -80,6 +85,47 @@ document.addEventListener("DOMContentLoaded", function () {
         if (board[toRow][toCol] && (isWhitePiece(piece) && isWhitePiece(board[toRow][toCol]) || isBlackPiece(piece) && isBlackPiece(board[toRow][toCol]))) return false;  // Cannot capture own piece
         if (currentPlayer === 'white' && !isWhitePiece(piece) && !test) return false;
         if (currentPlayer === 'black' && !isBlackPiece(piece) && !test) return false;
+        if (piece.toLowerCase() === 'k') {  // Check if the piece is a king
+            // Kingside Castling for white (white is on the bottom)
+            if (piece === 'K' && fromRow === 0 && fromCol === 4 && toRow === 0 && toCol === 6) {
+                if (!whiteKingMoved && !whiteRookMoved.kingside && 
+                    board[0][5] === '' && board[0][6] === '' &&
+                    isMoveSafe(piece, fromRow, fromCol, 0, 5) &&  // The square the king passes through must be safe
+                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {  // Destination square must be safe
+                    return true;  // Castling is valid
+                }
+            }
+    
+            // Queenside Castling for white (white is on the bottom)
+            if (piece === 'K' && fromRow === 0 && fromCol === 4 && toRow === 0 && toCol === 2) {
+                if (!whiteKingMoved && !whiteRookMoved.queenside && 
+                    board[0][1] === '' && board[0][2] === '' && board[0][3] === '' &&
+                    isMoveSafe(piece, fromRow, fromCol, 0, 3) &&  // The square the king passes through must be safe
+                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {  // Destination square must be safe
+                    return true;  // Castling is valid
+                }
+            }
+    
+            // Kingside Castling for black (black is on the top)
+            if (piece === 'k' && fromRow === 7 && fromCol === 4 && toRow === 7 && toCol === 6) {
+                if (!blackKingMoved && !blackRookMoved.kingside && 
+                    board[7][5] === '' && board[7][6] === '' &&
+                    isMoveSafe(piece, fromRow, fromCol, 7, 5) &&
+                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {
+                    return true;  // Castling is valid
+                }
+            }
+    
+            // Queenside Castling for black (black is on the top)
+            if (piece === 'k' && fromRow === 7 && fromCol === 4 && toRow === 7 && toCol === 2) {
+                if (!blackKingMoved && !blackRookMoved.queenside && 
+                    board[7][1] === '' && board[7][2] === '' && board[7][3] === '' &&
+                    isMoveSafe(piece, fromRow, fromCol, 7, 3) &&
+                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {
+                    return true;  // Castling is valid
+                }
+            }
+        }
         switch (piece.toLowerCase()) {
             case 'p': return isValidPawnMove(piece, fromRow, fromCol, toRow, toCol);
             case 'r': return isValidRookMove(fromRow, fromCol, toRow, toCol);
@@ -138,6 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function isValidKingMove(fromRow, fromCol, toRow, toCol) {
+
         return Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1;
     }
 
@@ -241,11 +288,12 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Checking for checkmate or stalemate for " + currentPlayer);
         if (!hasLegalMoves(currentPlayer)) {
             if (isKingInCheck(currentPlayer)) {
-                title.innerHTML = currentPlayer + " is in checkmate. gg ez.";
+                let winner = currentPlayer === 'white' ? 'black' : 'white';
+                title.innerHTML = "checkmate. " +  winner +" wins. gg ez.";
                 console.log(currentPlayer + " is in checkmate! Game over.");
                 gameOver();
             } else {
-                title.innerHTML = currentPlayer + " is in stalemate. gg.";
+                title.innerHTML =  "stalemate. gg.";
                 console.log(currentPlayer + " is in stalemate! Game over.");
                 gameOver();
             }
@@ -301,6 +349,83 @@ document.addEventListener("DOMContentLoaded", function () {
                 square.addEventListener('dragover', (e) => {
                     e.preventDefault()}
                 );
+
+                square.addEventListener('click', (e) => {
+                    if (highlightedPiece && !(highlightedPiece.parentElement.dataset.row === square.dataset.row && highlightedPiece.parentElement.dataset.col === square.dataset.col)) {
+                        console.log("Highlighted Piece: ", highlightedPiece);
+                        const targetRow = parseInt(square.dataset.row);
+                        const targetCol = parseInt(square.dataset.col);
+                        const fromRow = parseInt(highlightedPiece.parentElement.dataset.row);
+                        const fromCol = parseInt(highlightedPiece.parentElement.dataset.col);
+                
+                        const piece = board[fromRow][fromCol];  // Get the actual piece from the board
+                
+                        console.log("From Position: ", fromRow, fromCol);
+                        console.log("Target Position: ", targetRow, targetCol);
+                        console.log("Is Move Valid: ", isValidMove(piece, fromRow, fromCol, targetRow, targetCol));
+                
+                        if (isValidMove(piece, fromRow, fromCol, targetRow, targetCol) && 
+                            (board[targetRow][targetCol] === '' || isOpponentPiece(piece, targetRow, targetCol)) && 
+                            isMoveSafe(piece, fromRow, fromCol, targetRow, targetCol)) {
+                            
+                            // Save the current state to history before making a move
+                            history.push(cloneBoard(board));  // Save the board before the move
+                           
+                            if (piece.toLowerCase() === 'k' && Math.abs(targetCol - fromCol) === 2) {
+                                // Castling move detected
+                                if (targetCol === 6) {  // Kingside castling
+                                    board[fromRow][5] = board[fromRow][7];  // Move the rook
+                                    board[fromRow][7] = '';  // Clear the original rook position
+                                } else if (targetCol === 2) {  // Queenside castling
+                                    board[fromRow][3] = board[fromRow][0];  // Move the rook
+                                    board[fromRow][0] = '';  // Clear the original rook position
+                                }
+                            }
+                            
+                            // Handle en passant
+                            if (piece.toLowerCase() === 'p' && enPassantTarget) {
+                                if (targetRow === enPassantTarget.row && targetCol === enPassantTarget.col) {
+                                    // Remove the captured pawn (en passant capture)
+                                    board[enPassantTarget.row + (piece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
+                                }
+                            }
+                
+                            // Move the piece
+                            board[fromRow][fromCol] = '';
+                            board[targetRow][targetCol] = piece;
+
+                            // Update king/rook movement flags
+                            if (piece === 'K') whiteKingMoved = true;
+                            if (piece === 'k') blackKingMoved = true;
+                            if (piece === 'R' && fromRow === 7 && fromCol === 0) whiteRookMoved.queenside = true;
+                            if (piece === 'R' && fromRow === 7 && fromCol === 7) whiteRookMoved.kingside = true;
+                            if (piece === 'r' && fromRow === 0 && fromCol === 0) blackRookMoved.queenside = true;
+                            if (piece === 'r' && fromRow === 0 && fromCol === 7) blackRookMoved.kingside = true;
+
+                
+                            // Switch player turn
+                            currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+                            console.log("Current Player: ", currentPlayer);
+                
+                            if (fullMoveDone) {
+                                enPassantTarget = null;  // Clear enPassantTarget after a full move
+                                fullMoveDone = false;
+                            }
+                
+                            // Clear enPassantTarget after a move
+                            if (enPassantTarget != null) {
+                                fullMoveDone = true;
+                            }
+                
+                            renderBoard();
+                            checkForCheckmateOrStalemate();
+                        } else {
+                            console.log("Invalid move: King would be in check or move not valid");
+                        }
+                    }
+                });
+                
+
                 square.addEventListener('drop', (e) => {
                     const targetRow = parseInt(square.dataset.row);
                     const targetCol = parseInt(square.dataset.col);
@@ -310,11 +435,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         const fromCol = draggedFrom.col;
                 
                         // Debugging statements
-        console.log("Dragged Piece: ", draggedPiece);
-        console.log("From Position: ", fromRow, fromCol);
-        console.log("Target Position: ", targetRow, targetCol);
-        console.log("Is Move Valid: ", isValidMove(draggedPiece, fromRow, fromCol, targetRow, targetCol));  
-        console.log("Is Move Safe: ", isMoveSafe(draggedPiece, fromRow, fromCol, targetRow, targetCol));
+                        console.log("Dragged Piece: ", draggedPiece);
+                        console.log("From Position: ", fromRow, fromCol);
+                        console.log("Target Position: ", targetRow, targetCol);
+                        console.log("Is Move Valid: ", isValidMove(draggedPiece, fromRow, fromCol, targetRow, targetCol));  
+                        console.log("Is Move Safe: ", isMoveSafe(draggedPiece, fromRow, fromCol, targetRow, targetCol));
 
                         // Validate move
                         if (isValidMove(draggedPiece, fromRow, fromCol, targetRow, targetCol) && 
@@ -324,6 +449,17 @@ document.addEventListener("DOMContentLoaded", function () {
                             // Save the current state to history before making a move
                             history.push(cloneBoard(board));  // Save the board before the move
                             
+                            if (draggedPiece.toLowerCase() === 'k' && Math.abs(targetCol - fromCol) === 2) {
+                                // Castling move detected
+                                if (targetCol === 6) {  // Kingside castling
+                                    board[fromRow][5] = board[fromRow][7];  // Move the rook
+                                    board[fromRow][7] = '';  // Clear the original rook position
+                                } else if (targetCol === 2) {  // Queenside castling
+                                    board[fromRow][3] = board[fromRow][0];  // Move the rook
+                                    board[fromRow][0] = '';  // Clear the original rook position
+                                }
+                            }
+
                             // Handle en passant
                             if (draggedPiece.toLowerCase() === 'p' && enPassantTarget) {
                                 if (targetRow === enPassantTarget.row && targetCol === enPassantTarget.col) {
@@ -336,6 +472,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             board[fromRow][fromCol] = '';
                             board[targetRow][targetCol] = draggedPiece;
                 
+                            // Update king/rook movement flags
+                            if (piece === 'K') whiteKingMoved = true;
+                            if (piece === 'k') blackKingMoved = true;
+                            if (piece === 'R' && fromRow === 7 && fromCol === 0) whiteRookMoved.queenside = true;
+                            if (piece === 'R' && fromRow === 7 && fromCol === 7) whiteRookMoved.kingside = true;
+                            if (piece === 'r' && fromRow === 0 && fromCol === 0) blackRookMoved.queenside = true;
+                            if (piece === 'r' && fromRow === 0 && fromCol === 7) blackRookMoved.kingside = true;
+
                             // Switch player turn
                             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
                             console.log("Current Player: ", currentPlayer);
