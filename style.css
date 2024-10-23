@@ -1,6 +1,6 @@
 /* General styling */
 body {
-    font-family: Arial, sans-serif;
+    font-family: monospace, sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
@@ -14,6 +14,12 @@ body {
     border: 2px solid yellow; /* Change to your preferred color */
     box-shadow: 0 0 10px rgba(255, 255, 0, 0.5); /* Optional for better visibility */
     z-index: 1;;
+}
+
+#move-pgn {
+    min-height: 10vh;
+    min-width: 480px;
+    text-align: left;
 }
 
 
