@@ -18,7 +18,7 @@ body {
 
 #move-pgn {
     min-height: 10vh;
-    min-width: 480px;
+    width: 480px;
     text-align: left;
 }
 

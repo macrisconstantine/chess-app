@@ -89,11 +89,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const isWhitePiece = (piece) => /^[RNBQKP]$/.test(piece);
     const isBlackPiece = (piece) => /^[rnbqkp]$/.test(piece);
 
-    function isValidMove(piece, fromRow, fromCol, toRow, toCol, test) {
-        if (fromRow === toRow && fromCol === toCol) return false;  // The piece must move to a different square
-        if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;  // Target square must be on the board
+    function isValidMove(piece, fromRow, fromCol, targetRow, targetCol, test) {
+        if (fromRow === targetRow && fromCol === targetCol) return false;  // The piece must move to a different square
+        if (targetRow < 0 || targetRow > 7 || targetCol < 0 || targetCol > 7) return false;  // Target square must be on the board
         if (piece === '') return false;  // Must select a piece to move
-        if (board[toRow][toCol] && (isWhitePiece(piece) && isWhitePiece(board[toRow][toCol]) || isBlackPiece(piece) && isBlackPiece(board[toRow][toCol]))) return false;  // Cannot capture own piece
+        if (board[targetRow][targetCol] && (isWhitePiece(piece) && isWhitePiece(board[targetRow][targetCol]) || isBlackPiece(piece) && isBlackPiece(board[targetRow][targetCol]))) return false;  // Cannot capture own piece
         if (currentPlayer === 'white' && !isWhitePiece(piece) && !test) return false;
         if (currentPlayer === 'black' && !isBlackPiece(piece) && !test) return false;
     
@@ -101,75 +101,75 @@ document.addEventListener("DOMContentLoaded", function () {
         if (piece.toLowerCase() === 'k') {  
     
             // Kingside Castling for white (white is on row 7)
-            if (piece === 'K' && fromRow === 7 && fromCol === 4 && toRow === 7 && toCol === 6) {
+            if (piece === 'K' && fromRow === 7 && fromCol === 4 && targetRow === 7 && targetCol === 6) {
                 if (!whiteKingMoved && !whiteRookMoved.kingside && 
                     board[7][5] === '' && board[7][6] === '' &&
                     isMoveSafe(piece, fromRow, fromCol, 7, 5) &&  // The square the king passes through must be safe
-                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {  // Destination square must be safe
+                    isMoveSafe(piece, fromRow, fromCol, targetRow, targetCol)) {  // Destination square must be safe
                     return true;  // Castling is valid
                 }
             }
     
             // Queenside Castling for white (white is on row 7)
-            if (piece === 'K' && fromRow === 7 && fromCol === 4 && toRow === 7 && toCol === 2) {
+            if (piece === 'K' && fromRow === 7 && fromCol === 4 && targetRow === 7 && targetCol === 2) {
                 if (!whiteKingMoved && !whiteRookMoved.queenside && 
                     board[7][1] === '' && board[7][2] === '' && board[7][3] === '' &&
                     isMoveSafe(piece, fromRow, fromCol, 7, 3) &&  // The square the king passes through must be safe
-                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {  // Destination square must be safe
+                    isMoveSafe(piece, fromRow, fromCol, targetRow, targetCol)) {  // Destination square must be safe
                     return true;  // Castling is valid
                 }
             }
     
             // Kingside Castling for black (black is on row 0)
-            if (piece === 'k' && fromRow === 0 && fromCol === 4 && toRow === 0 && toCol === 6) {
+            if (piece === 'k' && fromRow === 0 && fromCol === 4 && targetRow === 0 && targetCol === 6) {
                 if (!blackKingMoved && !blackRookMoved.kingside && 
                     board[0][5] === '' && board[0][6] === '' &&
                     isMoveSafe(piece, fromRow, fromCol, 0, 5) &&
-                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {
+                    isMoveSafe(piece, fromRow, fromCol, targetRow, targetCol)) {
                     return true;  // Castling is valid
                 }
             }
     
             // Queenside Castling for black (black is on row 0)
-            if (piece === 'k' && fromRow === 0 && fromCol === 4 && toRow === 0 && toCol === 2) {
+            if (piece === 'k' && fromRow === 0 && fromCol === 4 && targetRow === 0 && targetCol === 2) {
                 if (!blackKingMoved && !blackRookMoved.queenside && 
                     board[0][1] === '' && board[0][2] === '' && board[0][3] === '' &&
                     isMoveSafe(piece, fromRow, fromCol, 0, 3) &&
-                    isMoveSafe(piece, fromRow, fromCol, toRow, toCol)) {
+                    isMoveSafe(piece, fromRow, fromCol, targetRow, targetCol)) {
                     return true;  // Castling is valid
                 }
             }
         }
         switch (piece.toLowerCase()) {
-            case 'p': return isValidPawnMove(piece, fromRow, fromCol, toRow, toCol);
-            case 'r': return isValidRookMove(fromRow, fromCol, toRow, toCol);
-            case 'n': return isValidKnightMove(fromRow, fromCol, toRow, toCol);
-            case 'b': return isValidBishopMove(fromRow, fromCol, toRow, toCol);
-            case 'q': return isValidQueenMove(fromRow, fromCol, toRow, toCol);
-            case 'k': return isValidKingMove(fromRow, fromCol, toRow, toCol);
+            case 'p': return isValidPawnMove(piece, fromRow, fromCol, targetRow, targetCol);
+            case 'r': return isValidRookMove(fromRow, fromCol, targetRow, targetCol);
+            case 'n': return isValidKnightMove(fromRow, fromCol, targetRow, targetCol);
+            case 'b': return isValidBishopMove(fromRow, fromCol, targetRow, targetCol);
+            case 'q': return isValidQueenMove(fromRow, fromCol, targetRow, targetCol);
+            case 'k': return isValidKingMove(fromRow, fromCol, targetRow, targetCol);
             default: return false;
         }
     }
 
-    function isValidPawnMove(piece, fromRow, fromCol, toRow, toCol) {
+    function isValidPawnMove(piece, fromRow, fromCol, targetRow, targetCol) {
         const direction = piece === 'P' ? 1 : -1; // White moves up (-1), Black moves down (+1)
         const startRow = piece === 'P' ? 6 : 1; // Starting position for pawns
 
         // Normal move (forward by 1)
-        if (fromCol === toCol && !board[toRow][toCol]) {
+        if (fromCol === targetCol && !board[targetRow][targetCol]) {
             // Move forward one square
-            if (fromRow - toRow === direction) return true;
+            if (fromRow - targetRow === direction) return true;
             // Move forward two squares (only from starting position)
-            if (fromRow === startRow && (fromRow - toRow) === (2 * direction) ) {
-                enPassantTarget = { row: toRow + direction, col: toCol};  // Set the en passant target square
+            if (fromRow === startRow && (fromRow - targetRow) === (2 * direction) ) {
+                enPassantTarget = { row: targetRow + direction, col: targetCol};  // Set the en passant target square
                 return true;
             }
         }
         
         // Capture move (diagonal)
-        if ((Math.abs(fromCol - toCol) === 1 ) && (fromRow - toRow === direction)) {
+        if ((Math.abs(fromCol - targetCol) === 1 ) && (fromRow - targetRow === direction)) {
             // Check if the target square has an opponent piece
-            return isOpponentPiece(piece, toRow, toCol) || enPassantTarget && enPassantTarget.row === toRow && enPassantTarget.col === toCol;
+            return isOpponentPiece(piece, targetRow, targetCol) || enPassantTarget && enPassantTarget.row === targetRow && enPassantTarget.col === targetCol;
         }
         
         return false; // Invalid move
@@ -177,39 +177,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     
 
-    function isValidRookMove(fromRow, fromCol, toRow, toCol) {
-        if (fromRow !== toRow && fromCol !== toCol) return false;
-        return isPathClear(fromRow, fromCol, toRow, toCol);
+    function isValidRookMove(fromRow, fromCol, targetRow, targetCol) {
+        if (fromRow !== targetRow && fromCol !== targetCol) return false;
+        return isPathClear(fromRow, fromCol, targetRow, targetCol);
     }
 
-    function isValidKnightMove(fromRow, fromCol, toRow, toCol) {
-        const rowDiff = Math.abs(fromRow - toRow);
-        const colDiff = Math.abs(fromCol - toCol);
+    function isValidKnightMove(fromRow, fromCol, targetRow, targetCol) {
+        const rowDiff = Math.abs(fromRow - targetRow);
+        const colDiff = Math.abs(fromCol - targetCol);
         return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
     }
 
-    function isValidBishopMove(fromRow, fromCol, toRow, toCol) {
-        if (Math.abs(fromRow - toRow) !== Math.abs(fromCol - toCol)) return false;
-        return isPathClear(fromRow, fromCol, toRow, toCol);
+    function isValidBishopMove(fromRow, fromCol, targetRow, targetCol) {
+        if (Math.abs(fromRow - targetRow) !== Math.abs(fromCol - targetCol)) return false;
+        return isPathClear(fromRow, fromCol, targetRow, targetCol);
     }
 
-    function isValidQueenMove(fromRow, fromCol, toRow, toCol) {
-        return isValidRookMove(fromRow, fromCol, toRow, toCol) || isValidBishopMove(fromRow, fromCol, toRow, toCol);
+    function isValidQueenMove(fromRow, fromCol, targetRow, targetCol) {
+        return isValidRookMove(fromRow, fromCol, targetRow, targetCol) || isValidBishopMove(fromRow, fromCol, targetRow, targetCol);
     }
 
-    function isValidKingMove(fromRow, fromCol, toRow, toCol) {
+    function isValidKingMove(fromRow, fromCol, targetRow, targetCol) {
 
-        return Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1;
+        return Math.abs(fromRow - targetRow) <= 1 && Math.abs(fromCol - targetCol) <= 1;
     }
 
-    function isPathClear(fromRow, fromCol, toRow, toCol) {
-        const rowDir = fromRow < toRow ? 1 : fromRow > toRow ? -1 : 0;
-        const colDir = fromCol < toCol ? 1 : fromCol > toCol ? -1 : 0;
+    function isPathClear(fromRow, fromCol, targetRow, targetCol) {
+        const rowDir = fromRow < targetRow ? 1 : fromRow > targetRow ? -1 : 0;
+        const colDir = fromCol < targetCol ? 1 : fromCol > targetCol ? -1 : 0;
 
         let row = fromRow + rowDir;
         let col = fromCol + colDir;
 
-        while (row !== toRow || col !== toCol) {
+        while (row !== targetRow || col !== targetCol) {
             if (board[row][col]) return false;
             row += rowDir;
             col += colDir;
@@ -261,18 +261,18 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     
-    function isMoveSafe(piece, fromRow, fromCol, toRow, toCol) {
-        const originalPiece = board[toRow][toCol];  // Save the piece at the target location
+    function isMoveSafe(piece, fromRow, fromCol, targetRow, targetCol) {
+        const originalPiece = board[targetRow][targetCol];  // Save the piece at the target location
         
         // Temporarily make the move
-        board[toRow][toCol] = piece;
+        board[targetRow][targetCol] = piece;
         board[fromRow][fromCol] = '';
     
         const isInCheck = isKingInCheck(currentPlayer);
     
         // Undo the move
         board[fromRow][fromCol] = piece;
-        board[toRow][toCol] = originalPiece;
+        board[targetRow][targetCol] = originalPiece;
     
         return !isInCheck;  // Return true if the king is not in check after the move
     }
@@ -320,21 +320,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Function to generate PGN notation from a move
-    function getPgnMove(piece, fromRow, fromCol, toRow, toCol, isCapture = false, promotion = null, isCheck = false, isMate = false, isCastling = false) {
+    function getPgnMove(piece, fromRow, fromCol, targetRow, targetCol, isCapture = false, promotion = null, isCheck = false, isMate = false, isCastling = false) {
         const columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         const pieceNotation = (piece.toLowerCase() === 'p') ? '' : piece.toUpperCase();  // No letter for pawn
         const fromNotation = columns[fromCol] + (8 - fromRow);  // Convert to chess notation (a-h, 1-8)
-        const toNotation = columns[toCol] + (8 - toRow);
+        const toNotation = columns[targetCol] + (8 - targetRow);
         
         let moveNotation = pieceNotation;  // Start with piece notation
         console.log("about to castle", isCastling);
         
         // Handle castling
         if (isCastling) {
-            if (toCol === 6) {
+            if (targetCol === 6) {
                 // Kingside castling
                 return "O-O";
-            } else if (toCol === 2) {
+            } else if (targetCol === 2) {
                 // Queenside castling
                 return "O-O-O";
             }
@@ -353,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
             moveNotation += '=' + promotion.toUpperCase();  // Add promotion notation (e.g., =Q for queen)
         }
         
-        if (isCheck) {
+        if (isCheck && !isMate) {
             moveNotation += '+';  // Add check notation
         }
          
@@ -364,17 +364,30 @@ document.addEventListener("DOMContentLoaded", function () {
         return moveNotation;
     }
 
-    function printPgn(piece, fromRow, fromCol, targetRow, targetCol, isCapture, isCastling) {
-        if (currentPlayer === 'white') {
+    function printPgn(piece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isCastling) {
+        if (currentPlayer === 'black') {
             moveCount++;
             pgn.innerHTML += moveCount + ".";}
-        pgn.innerHTML += getPgnMove(piece, fromRow, fromCol, targetRow, targetCol, isCapture, null, isKingInCheck(currentPlayer), isKingInCheck(currentPlayer) && !hasLegalMoves(currentPlayer), isCastling) + " ";
+        // let opponent = currentPlayer === 'white' ? 'black' : 'white';
+        pgn.innerHTML += getPgnMove(piece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isKingInCheck(currentPlayer), isKingInCheck(currentPlayer) && !hasLegalMoves(currentPlayer), isCastling) + " ";
     }
 
     // // Example of using this function to generate a PGN move
     // let pgnMove = getPgnMove('p', 6, 4, 4, 4, false, null, false, false);  // Example: Pawn moves e2 to e4
     // console.log(pgnMove);  // Should print "e4"
-
+    function promotePawn(row, col, piece) {
+        // // Display a dialog to let the player choose a piece to promote to
+        // const promotionDialog = document.getElementById("promotion-dialog");
+        // promotionDialog.style.display = "block";  // Show the dialog
+        // promotionDialog.style.top = (row * 100) + "px";  // Position the dialog
+        // promotionDialog.style.left = (col * 100) + "px";  // Position the dialog
+        // promotionDialog.dataset.row = row;
+        // promotionDialog.dataset.col = col;
+        let queen = piece === 'p'? 'q': 'Q';
+        console.log("Promoting pawn to queen ", queen);
+        board[row][col] = queen;  // Promote the pawn to a queen
+        return queen;
+    }
 
     // Render the board
     function renderBoard() {
@@ -428,8 +441,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         const targetCol = parseInt(square.dataset.col);
                         const fromRow = parseInt(highlightedPiece.parentElement.dataset.row);
                         const fromCol = parseInt(highlightedPiece.parentElement.dataset.col);
-                        const isCapture = board[targetRow][targetCol] !== '';
+                        let isCapture = board[targetRow][targetCol] !== '';
                         let isCastling = false;
+                        let promotion = null;
                         const piece = board[fromRow][fromCol];  // Get the actual piece from the board
                 
                         console.log("From Position: ", fromRow, fromCol);
@@ -459,13 +473,23 @@ document.addEventListener("DOMContentLoaded", function () {
                             if (piece.toLowerCase() === 'p' && enPassantTarget) {
                                 if (targetRow === enPassantTarget.row && targetCol === enPassantTarget.col) {
                                     // Remove the captured pawn (en passant capture)
-                                    board[enPassantTarget.row + (piece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
+                                    board[enPassantTarget.row - (piece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
+                                    isCapture = true;
+
                                 }
                             }
-                            
+
                             // Move the piece
                             board[fromRow][fromCol] = '';
                             board[targetRow][targetCol] = piece;
+                            
+                            if (piece === 'P' && targetRow === 0) {
+                                // White pawn promotion on row 1 (0 index after flip)
+                                promotion = promotePawn(targetRow, targetCol, piece);
+                            } else if (piece === 'p' && targetRow === 7) {
+                                // Black pawn promotion on row 8 (7 index after flip)
+                                promotion = promotePawn(targetRow, targetCol, piece);
+                            }
                             
                             // Update king/rook movement flags
                             if (piece === 'K') whiteKingMoved = true;
@@ -475,23 +499,23 @@ document.addEventListener("DOMContentLoaded", function () {
                             if (piece === 'r' && fromRow === 0 && fromCol === 0) blackRookMoved.queenside = true;
                             if (piece === 'r' && fromRow === 0 && fromCol === 7) blackRookMoved.kingside = true;
                             console.log("Current Player: ", currentPlayer);
-                            printPgn(piece, fromRow, fromCol, targetRow, targetCol, isCapture, isCastling);
                             // console.log(getPgnMove(piece, fromRow, fromCol, targetRow, targetCol, board[targetRow][targetCol] !== '', null, isKingInCheck(currentPlayer), isKingInCheck(currentPlayer) && !hasLegalMoves(currentPlayer)));
                             // Switch player turn
                             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
                             // console.log("Current Player: ", currentPlayer);
-                
+                            
                             if (fullMoveDone) {
                                 enPassantTarget = null;  // Clear enPassantTarget after a full move
                                 fullMoveDone = false;
                             }
-                
+                            
                             // Clear enPassantTarget after a move
                             if (enPassantTarget != null) {
                                 fullMoveDone = true;
                             }
-                
+                            
                             renderBoard();
+                            printPgn(piece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isCastling);
                             checkForCheckmateOrStalemate();
                         } else {
                             // console.log("Invalid move: King would be in check or move not valid");
@@ -507,8 +531,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (draggedPiece && draggedFrom) {
                         const fromRow = draggedFrom.row;
                         const fromCol = draggedFrom.col;
-                        const isCapture = board[targetRow][targetCol] !== '';
+                        let isCapture = board[targetRow][targetCol] !== '';
                         let isCastling = false;
+                        let promotion = null;
                 
                         // // Debugging statements
                         // console.log("Dragged Piece: ", draggedPiece);
@@ -541,14 +566,24 @@ document.addEventListener("DOMContentLoaded", function () {
                             if (draggedPiece.toLowerCase() === 'p' && enPassantTarget) {
                                 if (targetRow === enPassantTarget.row && targetCol === enPassantTarget.col) {
                                     // Remove the captured pawn (en passant capture)
-                                    board[enPassantTarget.row + (draggedPiece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
+                                    board[enPassantTarget.row - (draggedPiece === 'P' ? -1 : 1)][enPassantTarget.col] = '';
+                                    isCapture = true;
                                 }
                             }
-                
+
+                            
                             // Move the piece
                             board[fromRow][fromCol] = '';
                             board[targetRow][targetCol] = draggedPiece;
-                
+                            
+                            // Example of adjusting promotion for flipped board
+                            if (draggedPiece === 'P' && targetRow === 0) {
+                                // White pawn promotion on row 1 (0 index after flip)
+                                promotion = promotePawn(targetRow, targetCol, draggedPiece);
+                            } else if (draggedPiece === 'p' && targetRow === 7) {
+                                // Black pawn promotion on row 8 (7 index after flip)
+                                promotion = promotePawn(targetRow, targetCol, draggedPiece);
+                            }
                             // Update king/rook movement flags
                             if (piece === 'K') whiteKingMoved = true;
                             if (piece === 'k') blackKingMoved = true;
@@ -557,7 +592,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             if (piece === 'r' && fromRow === 0 && fromCol === 0) blackRookMoved.queenside = true;
                             if (piece === 'r' && fromRow === 0 && fromCol === 7) blackRookMoved.kingside = true;
 
-                            printPgn(draggedPiece, fromRow, fromCol, targetRow, targetCol, isCapture, isCastling);
                             
                             // Switch player turn
                             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
@@ -566,14 +600,15 @@ document.addEventListener("DOMContentLoaded", function () {
                                 enPassantTarget = null;  // Clear enPassantTarget after a full move
                                 fullMoveDone = false;
                             }
-                
+                            
                             // Clear enPassantTarget after a move
                             if (enPassantTarget != null) {
                                 fullMoveDone = true;
                             }
-                
+                            
                             renderBoard();
-                
+                            
+                            printPgn(draggedPiece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isCastling);
                             checkForCheckmateOrStalemate();
                         } else {
                             console.log("Invalid move: King would be in check or move not valid");
