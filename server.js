@@ -25,31 +25,28 @@ stockfish.stdout.on('data', (data) => {
     console.log(`Stockfish says: ${data}`);
 });
 
+// Function to evaluate the position with Stockfish
 function evaluatePosition(fen, res) {
-    // Clear any existing listeners to avoid duplications
-    stockfish.stdout.removeAllListeners('data');
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // Default FEN
+    // Send the position to Stockfish
     stockfish.stdin.write(`position fen ${fen}\n`);
-    stockfish.stdin.write('go depth 10\n');
+    // Request the best move
+    stockfish.stdin.write('go depth 20\n');
     
-    let stockfishOutput = '';
-
-    stockfish.stdout.on('data', (data) => {
+    stockfish.stdout.once('data', (data) => {
         const output = data.toString();
-        stockfishOutput += output;  // Accumulate the output
+        // console.log(`Stockfish Output: ${output}`);
         
-        console.log('Stockfish Output:', stockfishOutput); // Log the output for debugging
-
-        // Check for the bestmove line
-        if (output.includes('bestmove')) {
-            const bestMoveLine = output.split('\n').find(line => line.startsWith('bestmove'));
-            if (bestMoveLine) {
-                const bestMove = bestMoveLine.split(' ')[1];  // e.g., e2e4
-                res.json({ bestMove: bestMove, stockfishOutput: stockfishOutput });
-            }
+        // Parse the best move from Stockfish's output
+        const bestMoveLine = output.split('\n').find(line => line.startsWith('bestmove'));
+        if (bestMoveLine) {
+            const bestMove = bestMoveLine.split(' ')[1];
+            res.json({ bestMove });
+        } else {
+            res.status(500).json({ error: 'No best move found.' });
         }
     });
 }
+
 
 
 

@@ -389,7 +389,7 @@ document.addEventListener("DOMContentLoaded", function () {
         pgn.innerHTML += getPgnMove(piece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isKingInCheck(currentPlayer), isKingInCheck(currentPlayer) && !hasLegalMoves(currentPlayer), isCastling) + " ";
     }
 
-    function boardToFEN() {
+    function boardToFEN(board, currentPlayer) {
         let fen = '';
         for (let row = 0; row < 8; row++) {
             let emptyCount = 0;
@@ -564,11 +564,11 @@ document.addEventListener("DOMContentLoaded", function () {
                                 fullMoveDone = true;
                             }
                             
+                            sendFENToBackend(boardToFEN(board, currentPlayer));
                             renderBoard();
                             printPgn(piece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isCastling);
-                            boardToFEN(board, currentPlayer);
+                            // boardToFEN(board, currentPlayer);
                             checkForCheckmateOrStalemate();
-                            sendFENToBackend(boardToFEN(board, currentPlayer));
     
                         } else {
                             // console.log("Invalid move: King would be in check or move not valid");
