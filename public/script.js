@@ -434,10 +434,40 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error('Error:', error);
         });
         
-              
-        
     }
     
+    function updateEvaluationBar(scoreCp) {
+        const bar = document.getElementById('bar');
+        const scoreDisplay = document.getElementById('score');
+        
+        // Define ranges
+        let color;
+        let position;
+    
+        if (scoreCp < -200) {
+            color = 'red';
+            position = 0; // Fully to the left
+        } else if (scoreCp < 0) {
+            color = 'orange';
+            position = Math.floor(250 + (scoreCp / 200) * 250); // Map to the left side
+        } else if (scoreCp === 0) {
+            color = 'lightblue';
+            position = 250; // Center
+        } else if (scoreCp < 200) {
+            color = 'lightgreen';
+            position = Math.floor(250 + (scoreCp / 200) * 250); // Map to the right side
+        } else {
+            color = 'green';
+            position = 500; // Fully to the right
+        }
+    
+        // Set the bar's width and color
+        bar.style.width = position + 'px';
+        bar.style.backgroundColor = color;
+        
+        // Display the score
+        scoreDisplay.textContent = `${scoreCp} cp`;
+    }
     
     // Render the board
     function renderBoard() {
@@ -569,7 +599,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             printPgn(piece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isCastling);
                             // boardToFEN(board, currentPlayer);
                             checkForCheckmateOrStalemate();
-    
+                            // Assuming you received the score from Stockfish
+                            const scoreCp = 271; // Example score from Stockfish
+                            updateEvaluationBar(scoreCp);
                         } else {
                             // console.log("Invalid move: King would be in check or move not valid");
                         }
