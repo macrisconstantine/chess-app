@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let whiteRookMoved = { kingside: false, queenside: false };
     let blackRookMoved = { kingside: false, queenside: false };
     let moveCount = 0;  // Track the number of moves made
+    let isGameOver = false;  // Track if the game is over
 
     let test = false;  // Set to true to test the game
 
@@ -59,12 +60,16 @@ document.addEventListener("DOMContentLoaded", function () {
         highlightedPiece = null;
         fullMoveDone = false;
         pgn.innerHTML = '';
+        title.innerHTML = "bro made chess";
+        isGameOver = false;
+        updateEvaluationBar(0);
         renderBoard();
         console.log('New game started');
     });
 
     undoBtn.addEventListener('click', () => {
         if (history.length > 0) {
+            isGameOver = false;  // Reset the game over flag
             board = history.pop();  // Restore the previous board state
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';  // Switch player turn
             renderBoard();
@@ -304,11 +309,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (isKingInCheck(currentPlayer)) {
                 let winner = currentPlayer === 'white' ? 'black' : 'white';
                 title.innerHTML = "checkmate. " +  winner +" wins. gg ez.";
-                console.log(currentPlayer + " is in checkmate! Game over.");
+                // console.log(currentPlayer + " is in checkmate! Game over.");
                 gameOver();
             } else {
                 title.innerHTML =  "stalemate. gg.";
-                console.log(currentPlayer + " is in stalemate! Game over.");
+                // console.log(currentPlayer + " is in stalemate! Game over.");
                 gameOver();
             }
         }
@@ -317,6 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function gameOver() {
         // Handle the end of the game (e.g., display a message, stop the game, etc.)
         console.log("Game Over");
+        isGameOver = true;
     }
 
     // Function to generate PGN notation from a move
@@ -417,7 +423,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Function to send FEN to the backend
     function sendFENToBackend(fen) {
         
-        console.log('Sending FEN to backend:', fen);
+        // console.log('Sending FEN to backend:', fen);
 
         fetch('http://localhost:3000/api/evaluate', {
             method: 'POST',
@@ -428,7 +434,9 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Best Move: ', data.bestMove);
+            handleStockfishResponse(data);
+            // console.log('Received data:', data);
+            // console.log('Best Move: ', data.bestMove);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -437,37 +445,68 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     function updateEvaluationBar(scoreCp) {
-        const bar = document.getElementById('bar');
-        const scoreDisplay = document.getElementById('score');
+        const whiteBar = document.getElementById('white-bar');
+        const blackBar = document.getElementById('black-bar');
         
-        // Define ranges
-        let color;
-        let position;
+        // Cap the score at +/- 1000 for the sake of visualization
+        const cappedScore = Math.max(-1000, Math.min(1000, scoreCp));
+        
+        // Normalize score to a percentage (0% black, 100% white)
+        const percentageWhite = 50 + (cappedScore / 2000) * 100;  // Scale from 0 to 100
+        const percentageBlack = 100 - percentageWhite;  // Black is the remaining percentage
     
-        if (scoreCp < -200) {
-            color = 'red';
-            position = 0; // Fully to the left
-        } else if (scoreCp < 0) {
-            color = 'orange';
-            position = Math.floor(250 + (scoreCp / 200) * 250); // Map to the left side
-        } else if (scoreCp === 0) {
-            color = 'lightblue';
-            position = 250; // Center
-        } else if (scoreCp < 200) {
-            color = 'lightgreen';
-            position = Math.floor(250 + (scoreCp / 200) * 250); // Map to the right side
-        } else {
-            color = 'green';
-            position = 500; // Fully to the right
+        // Update bar heights
+        whiteBar.style.height = `${percentageWhite}%`;
+        blackBar.style.height = `${percentageBlack}%`;
+        if (!scoreCp[0]) return;  // Skip the rest if no score is available
+        if (scoreCp[0].toLowerCase() === 'm') {
+            if (currentPlayer === 'black') blackBar.style.height = `${100}%`;  // Show mate in moves instead of centipawn value
+            else {
+                whiteBar.style.height = `${100}%`;  // Show mate in moves instead of centipawn value
+                blackBar.style.height = `${0}%`;  // Show mate in moves instead of centipawn value
+            }
         }
-    
-        // Set the bar's width and color
-        bar.style.width = position + 'px';
-        bar.style.backgroundColor = color;
-        
-        // Display the score
-        scoreDisplay.textContent = `${scoreCp} cp`;
     }
+
+    function handleStockfishResponse(data) {
+        const stockfishOutput = data.stockfishOutput;
+        console.log('Stockfish Output:', stockfishOutput);
+        let scoreCp = parseScoreFromStockfish(stockfishOutput); // Write a function to extract the score
+        if (scoreCp){
+            if (currentPlayer === 'black' && scoreCp[0].toLowerCase() !== 'm') scoreCp = -scoreCp;  // Invert the score for the black player
+            updateEvaluationBar(scoreCp);
+            console.log(scoreCp);
+        }
+    }
+    
+// Example function to extract the last score (cp or mate) from Stockfish's output
+function parseScoreFromStockfish(output) {
+    if (!output) return 0;  // Default to 0 if no output is found
+    
+    // Use matchAll to capture all score lines for both cp and mate
+    const scoreLines = [...output.matchAll(/score (cp|mate) (-?\d+)/g)];
+    
+    // If we found any matches, return the last one
+    if (scoreLines.length > 0) {
+        const lastScoreLine = scoreLines[scoreLines.length - 1];
+        const scoreType = lastScoreLine[1]; // cp or mate
+        const scoreValue = parseInt(lastScoreLine[2], 10);
+
+        // If it's a mate score, return it with special handling (positive/negative for mate in x moves)
+        if (scoreType === 'mate') {
+            return scoreValue > 0 ? `Mate in ${scoreValue}` : `Mate in ${Math.abs(scoreValue)}`;
+        }
+        
+        // If it's a cp score, return it as is
+        return scoreValue;
+    }
+
+    return 0; // Default to 0 if no score is found
+}
+
+
+    
+    
     
     // Render the board
     function renderBoard() {
@@ -594,14 +633,13 @@ document.addEventListener("DOMContentLoaded", function () {
                                 fullMoveDone = true;
                             }
                             
-                            sendFENToBackend(boardToFEN(board, currentPlayer));
                             renderBoard();
                             printPgn(piece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isCastling);
-                            // boardToFEN(board, currentPlayer);
                             checkForCheckmateOrStalemate();
                             // Assuming you received the score from Stockfish
-                            const scoreCp = 271; // Example score from Stockfish
-                            updateEvaluationBar(scoreCp);
+                            // const scoreCp = 900; // Example score from Stockfish
+                            if (!isGameOver) sendFENToBackend(boardToFEN(board, currentPlayer));
+                            
                         } else {
                             // console.log("Invalid move: King would be in check or move not valid");
                         }
@@ -695,6 +733,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             
                             printPgn(draggedPiece, fromRow, fromCol, targetRow, targetCol, isCapture, promotion, isCastling);
                             checkForCheckmateOrStalemate();
+                            if (!isGameOver) sendFENToBackend(boardToFEN(board, currentPlayer));
+
                         } else {
                             console.log("Invalid move: King would be in check or move not valid");
                         }

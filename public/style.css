@@ -34,7 +34,7 @@ body {
 #evaluation-bar-container {
     width: 40px; /* Narrow bar like Chess.com */
     height: 480px; /* Adjust the height as needed */
-    background-color: #ddd; /* Gray background */
+    background-color: #f0f0f0; 
     /* border: 1px solid #000; */
     position: relative;
     border-radius: 10px;
@@ -48,8 +48,8 @@ body {
     bottom: 0;
     width: 100%;
     height: 50%; /* Default to 50%, neutral */
-    transition: height 0.5s;
-    border-radius: 0 0 10px 10px;
+    transition: height 0.75s;
+    border-radius: 10px 10px 10px 10px;
 
 }
 
@@ -59,8 +59,8 @@ body {
     top: 0;
     width: 100%;
     height: 50%; /* Default to 50%, neutral */
-    transition: height 0.5s;
-    border-radius: 10px 10px 0 0;
+    transition: height 0.75s;
+    border-radius: 10px 10px 10px 10px;
 
 }
 
