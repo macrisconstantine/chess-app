@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
         highlightedPiece = null;
         fullMoveDone = false;
         pgn.innerHTML = '';
-        title.innerHTML = "bro made chess";
+        title.innerHTML = "lydia didn't make chess";
         isGameOver = false;
         updateEvaluationBar(0);
         renderBoard();
