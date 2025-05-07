@@ -180,8 +180,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return false; // Invalid move
     }
 
-    
-
     function isValidRookMove(fromRow, fromCol, targetRow, targetCol) {
         if (fromRow !== targetRow && fromCol !== targetCol) return false;
         return isPathClear(fromRow, fromCol, targetRow, targetCol);
@@ -543,10 +541,17 @@ function parseScoreFromStockfish(output) {
                         // Highlight the currently clicked piece
                         highlightedPiece = pieceImg; // Store the current highlighted piece
                         highlightedPiece.classList.add('highlight'); // Add highlight class
+
                     });
 
                     square.appendChild(pieceImg);
                 }
+                possibleMoves = [{ row: row + 1, col: col }];
+                if (possibleMoves.some(move => move.row === row && move.col === col)) {
+                }
+                const indicator = document.createElement("div");
+                indicator.className = "move-dot";
+                square.appendChild(indicator);
 
                 // Drop event listeners
                 square.addEventListener('dragover', (e) => {
