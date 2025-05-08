@@ -546,12 +546,12 @@ function parseScoreFromStockfish(output) {
 
                     square.appendChild(pieceImg);
                 }
-                possibleMoves = [{ row: row + 1, col: col }];
+                possibleMoves = [{ row: 5, col: 3 }];
                 if (possibleMoves.some(move => move.row === row && move.col === col)) {
+                    const indicator = document.createElement("div");
+                    indicator.className = "move-dot";
+                    square.appendChild(indicator);
                 }
-                const indicator = document.createElement("div");
-                indicator.className = "move-dot";
-                square.appendChild(indicator);
 
                 // Drop event listeners
                 square.addEventListener('dragover', (e) => {
