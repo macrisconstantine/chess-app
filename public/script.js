@@ -94,6 +94,28 @@ document.addEventListener("DOMContentLoaded", function () {
     const isWhitePiece = (piece) => /^[RNBQKP]$/.test(piece);
     const isBlackPiece = (piece) => /^[rnbqkp]$/.test(piece);
 
+    function getLegalMovesForPiece(row, col) {
+        const piece = board[row][col];
+        const moves = [];
+
+        if (!piece) return moves;
+
+        if (piece === 'P') { // White pawn
+            if (!board[row - 1][col]) {
+                moves.push({ row: row - 1, col }); // One step forward
+                if (row === 6 && !board[row - 2][col]) {
+                    moves.push({ row: row - 2, col }); // Two steps on first move
+                }
+            }
+            // Add captures, en passant, etc...
+        }
+
+        // Add logic for other piece types
+
+        return moves;
+    }
+
+
     function isValidMove(piece, fromRow, fromCol, targetRow, targetCol, test) {
         if (fromRow === targetRow && fromCol === targetCol) return false;  // The piece must move to a different square
         if (targetRow < 0 || targetRow > 7 || targetCol < 0 || targetCol > 7) return false;  // Target square must be on the board
@@ -504,7 +526,9 @@ function parseScoreFromStockfish(output) {
 
 
     
-    
+    let selectedPosition = null; // Store selected piece position
+    let possibleMoves = [];
+
     
     // Render the board
     function renderBoard() {
@@ -535,18 +559,20 @@ function parseScoreFromStockfish(output) {
                         // Remove highlight from the previously highlighted piece
                         if (highlightedPiece) {
                             highlightedPiece.classList.remove('highlight');
+                            possibleMoves = []
                         }
                         if (currentPlayer === 'white' && !isWhitePiece(piece)) return false;
                         if (currentPlayer === 'black' && !isBlackPiece(piece)) return false;
                         // Highlight the currently clicked piece
+                        selectedPosition = { row, col };
                         highlightedPiece = pieceImg; // Store the current highlighted piece
                         highlightedPiece.classList.add('highlight'); // Add highlight class
-
+                        possibleMoves = getLegalMovesForPiece(row, col); // Get legal moves for the selected piece
                     });
 
                     square.appendChild(pieceImg);
                 }
-                possibleMoves = [{ row: 5, col: 3 }];
+                
                 if (possibleMoves.some(move => move.row === row && move.col === col)) {
                     const indicator = document.createElement("div");
                     indicator.className = "move-dot";
