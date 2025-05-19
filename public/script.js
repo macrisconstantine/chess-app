@@ -532,15 +532,19 @@ function parseScoreFromStockfish(output) {
     
     // Render the board
    function renderBoard() {
-    boardElement.innerHTML = '';  // Clear the board
-
-    for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-            const square = document.createElement("div");
-            square.className = "square " + ((row + col) % 2 === 0 ? "white" : "black");
-            square.dataset.row = row;
-            square.dataset.col = col;
-
+       for (let row = 0; row < 8; row++) {
+           for (let col = 0; col < 8; col++) {
+               const square = document.createElement("div");
+               square.className = "square " + ((row + col) % 2 === 0 ? "white" : "black");
+               square.dataset.row = row;
+               square.dataset.col = col;
+               
+               boardElement.innerHTML = '';  // Clear the board
+                                   if (possibleMoves.some(move => move.row === row && move.col === col)) {
+                                   const indicator = document.createElement("div");
+                                   indicator.className = "move-dot";
+                                   square.appendChild(indicator);
+                               }
             const piece = board[row][col];
             if (piece) {
                 const pieceImg = document.createElement("img");
@@ -577,6 +581,7 @@ function parseScoreFromStockfish(output) {
                     highlightedPiece.classList.add('highlight');
                     selectedPosition = { row, col };
                     possibleMoves = getLegalMovesForPiece(row, col);  // ✅ Must be defined elsewhere
+                                          // Show move dot
 
                     renderBoard(); // ✅ Re-render after setting possible moves
                 });
@@ -584,12 +589,7 @@ function parseScoreFromStockfish(output) {
                 square.appendChild(pieceImg);
             }
 
-            // Show move dot
-            if (possibleMoves.some(move => move.row === row && move.col === col)) {
-                const indicator = document.createElement("div");
-                indicator.className = "move-dot";
-                square.appendChild(indicator);
-            }
+      
 
             // Handle click-to-move logic
             square.addEventListener('click', (e) => {
@@ -624,6 +624,7 @@ function parseScoreFromStockfish(output) {
                         if (!isGameOver) sendFENToBackend(boardToFEN(board, currentPlayer));
                     }
                 }
+
             });
 
             square.addEventListener('dragover', (e) => {
