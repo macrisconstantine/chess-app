@@ -110,8 +110,71 @@ document.addEventListener("DOMContentLoaded", function () {
             // Add captures, en passant, etc...
         }
 
-        // Add logic for other piece types
+        if (piece === 'p') { // Black pawn
+            if (!board[row + 1][col]) {
+                moves.push({ row: row + 1, col }); // One step forward
+                if (row === 1 && !board[row + 2][col]) {
+                    moves.push({ row: row + 2, col }); // Two steps on first move
+                }
+            }
+            // Add captures, en passant, etc...
+        }
+        if (piece === 'R' || piece === 'r') { // Rook
+            for (let i = 1; i < 8; i++) {
+                if (row + i < 8 && !board[row + i][col]) moves.push({ row: row + i, col }); // Down
+                if (row - i >= 0 && !board[row - i][col]) moves.push({ row: row - i, col }); // Up
+                if (col + i < 8 && !board[row][col + i]) moves.push({ row, col: col + i }); // Right
+                if (col - i >= 0 && !board[row][col - i]) moves.push({ row, col: col - i }); // Left
+            }
+        }
+        if (piece === 'N' || piece === 'n') { // Knight
+            const knightMoves = [
+                { row: row + 2, col: col + 1 }, { row: row + 2, col: col - 1 },
+                { row: row - 2, col: col + 1 }, { row: row - 2, col: col - 1 },
+                { row: row + 1, col: col + 2 }, { row: row + 1, col: col - 2 },
+                { row: row - 1, col: col + 2 }, { row: row - 1, col: col - 2 }
+            ];
+            for (const move of knightMoves) {
+                if (move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8) {
+                    moves.push(move);
+                }
+            }
+        }
+        if (piece === 'B' || piece === 'b') { // Bishop
+            for (let i = 1; i < 8; i++) {
+                if (row + i < 8 && col + i < 8 && !board[row + i][col + i]) moves.push({ row: row + i, col: col + i }); // Down-Right
+                if (row + i < 8 && col - i >= 0 && !board[row + i][col - i]) moves.push({ row: row + i, col: col - i }); // Down-Left
+                if (row - i >= 0 && col + i < 8 && !board[row - i][col + i]) moves.push({ row: row - i, col: col + i }); // Up-Right
+                if (row - i >= 0 && col - i >= 0 && !board[row - i][col - i]) moves.push({ row: row - i, col: col - i }); // Up-Left
+            }
+        }
+        if (piece === 'Q' || piece === 'q') { // Queen
+            for (let i = 1; i < 8; i++) {
+                if (row + i < 8 && !board[row + i][col]) moves.push({ row: row + i, col }); // Down
+                if (row - i >= 0 && !board[row - i][col]) moves.push({ row: row - i, col }); // Up
+                if (col + i < 8 && !board[row][col + i]) moves.push({ row, col: col + i }); // Right
+                if (col - i >= 0 && !board[row][col - i]) moves.push({ row, col: col - i }); // Left
+                if (row + i < 8 && col + i < 8 && !board[row + i][col + i]) moves.push({ row: row + i, col: col + i }); // Down-Right
+                if (row + i < 8 && col - i >= 0 && !board[row + i][col - i]) moves.push({ row: row + i, col: col - i }); // Down-Left
+                if (row - i >= 0 && col + i < 8 && !board[row - i][col + i]) moves.push({ row: row - i, col: col + i }); // Up-Right
+                if (row - i >= 0 && col - i >= 0 && !board[row - i][col -i]) moves.push({ row: row -i, col: col -i }); // Up-Left
+            }
+        }
 
+        if (piece === 'K' || piece === 'k') { // King
+            const kingMoves = [
+                { row: row - 1, col: col - 1 }, { row: row - 1, col: col }, { row: row - 1, col: col + 1 },
+                { row: row, col: col - 1 },                             { row: row, col: col + 1 },
+                { row: row + 1, col: col - 1 }, { row: row + 1, col: col }, { row: row + 1, col: col + 1 }
+            ];
+            for (const move of kingMoves) {
+                if (move.row >= 0 && move.row < 8 && move.col >= 0 && move.col < 8) {
+                    moves.push(move);
+                }
+            }
+        }
+        // Filter out moves that would leave the king in check
+        // moves = moves.filter(move => isValidMove(piece, row, col, move.row, move.col, test) && isMoveSafe(piece, row, col, move.row, move.col));
         return moves;
     }
 
